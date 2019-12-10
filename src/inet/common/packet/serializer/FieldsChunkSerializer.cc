@@ -49,6 +49,15 @@ void checkSerializer(const Ptr<const Chunk>& chunk, MemoryOutputStream& stream) 
             EV_STATICCONTEXT;
             EV << orig << endl;
             EV << restored << endl;
+            std::ofstream one;
+            one.open("/home/marcell/1");
+            one << orig;
+            one.close();
+            std::ofstream two;
+            two.open("/home/marcell/2");
+            two << restored;
+            two.close();
+            system("meld /home/marcell/1 /home/marcell/2");
             ASSERT(false);
         }
     }
@@ -69,6 +78,10 @@ void FieldsChunkSerializer::serialize(MemoryOutputStream& stream, const Ptr<cons
         serialize(stream, fieldsChunk);
         auto endPosition = stream.getLength();
         auto serializedLength = endPosition - startPosition;
+        std::vector<uint8_t> bytes;
+        stream.copyData(bytes, startPosition, serializedLength);
+        MemoryOutputStream chunkStream(bytes);
+        checkSerializer(chunk, chunkStream);
         ChunkSerializer::totalSerializedLength += serializedLength;
         auto serializedBytes = new std::vector<uint8_t>();
         stream.copyData(*serializedBytes, startPosition, serializedLength);
@@ -78,6 +91,7 @@ void FieldsChunkSerializer::serialize(MemoryOutputStream& stream, const Ptr<cons
     else {
         MemoryOutputStream chunkStream(fieldsChunk->getChunkLength());
         serialize(chunkStream, fieldsChunk);
+        checkSerializer(chunk, chunkStream);
         stream.writeBytes(chunkStream.getData(), offset, length == b(-1) ? chunk->getChunkLength() - offset : length);
         ChunkSerializer::totalSerializedLength += chunkStream.getLength();
         auto serializedBytes = new std::vector<uint8_t>();
