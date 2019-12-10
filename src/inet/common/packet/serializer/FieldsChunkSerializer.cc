@@ -16,8 +16,46 @@
 #include "inet/common/packet/chunk/FieldsChunk.h"
 #include "inet/common/packet/serializer/FieldsChunkSerializer.h"
 #include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
+#include "inet/transportlayer/sctp/SctpHeader.h"
+
+#include "inet/common/ObjectPrinter.h"
+#include "inet/linklayer/ethernet/EtherFrame_m.h"
+#include "inet/transportlayer/common/TransportPseudoHeader_m.h"
+#include "inet/applications/base/ApplicationPacket_m.h"
+#include "inet/networklayer/ted/LinkStatePacket_m.h"
+#include "inet/networklayer/rsvpte/RsvpHelloMsg_m.h"
+#include <fstream>
+#include "inet/transportlayer/sctp/SctpHeader.h"
+#include "inet/common/packet/chunk/Chunk.h"
 
 namespace inet {
+namespace {
+
+void checkSerializer(const Ptr<const Chunk>& chunk, MemoryOutputStream& stream) {
+    const Chunk *chunkPointer = chunk.get();
+    if (dynamic_cast<const SliceChunk*>(chunkPointer) == nullptr && dynamic_cast<const FieldsChunk*>(chunkPointer) != nullptr &&
+            dynamic_cast<const EthernetPadding*>(chunkPointer) == nullptr && dynamic_cast<const TransportPseudoHeader*>(chunkPointer) == nullptr &&
+            dynamic_cast<const ApplicationPacket*>(chunkPointer) == nullptr && dynamic_cast<const RsvpHelloMsg*>(chunkPointer) == nullptr){
+        ObjectPrinter p(nullptr, "*: not mutable and not className and not fullName and not fullPath and not info and not rawBin and not rawHex and not tags and not payloadProtocol and not id and not treeId and not *Tag and not creationTime and not checksumOk and not crcMode and not enqueuingTime and not firstSendTime");
+        std::string orig = p.printObjectToString(const_cast<Chunk*>(chunk.get()));
+
+        std::vector<uint8_t> bytes;
+        stream.copyData(bytes);
+        MemoryInputStream tmpStream(bytes);
+        const Ptr<Chunk> restoredChunk = Chunk::deserialize(tmpStream, typeid(*chunkPointer));
+        std::string restored = p.printObjectToString(restoredChunk.get());
+
+        if (orig != restored) {
+            EV_STATICCONTEXT;
+            EV << orig << endl;
+            EV << restored << endl;
+            ASSERT(false);
+        }
+    }
+}
+
+}
+
 
 void FieldsChunkSerializer::serialize(MemoryOutputStream& stream, const Ptr<const Chunk>& chunk, b offset, b length) const
 {
