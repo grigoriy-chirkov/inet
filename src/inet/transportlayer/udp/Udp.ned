@@ -65,12 +65,13 @@ import inet.transportlayer.contract.IUdp;
 //
 // @see ~UdpHeader, ~UdpControlInfo, ~UdpCommandCode
 //
-simple Udp like IUdp
+simple UdpBase like IUdp
 {
     parameters:
         string interfaceTableModule;   // The path to the InterfaceTable module
         string icmpModule = default("^.ipv4.icmp");
         string icmpv6Module = default("^.ipv6.icmpv6");
+        bool udpLiteMode;
         string crcMode @enum("disabled", "declared", "computed") = default("declared");
         @display("i=block/transport");
         @signal[packetSentToUpper](type=cPacket);
@@ -93,5 +94,19 @@ simple Udp like IUdp
         input ipIn @labels(UdpHeader,Ipv4ControlInfo/up,Ipv6ControlInfo/up);
         output appOut @labels(UdpControlInfo/up) @messageKinds(inet::UdpStatusInd);
         output ipOut @labels(UdpHeader,Ipv4ControlInfo/down,Ipv6ControlInfo/down);
+}
+
+simple Udp extends UdpBase
+{
+    parameters:
+        @class(::inet::Udp);
+        udpLiteMode = false;
+}
+
+simple UdpLite extends UdpBase
+{
+    parameters:
+        @class(::inet::Udp);
+        udpLiteMode = true;
 }
 

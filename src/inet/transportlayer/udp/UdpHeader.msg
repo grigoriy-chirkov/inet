@@ -36,7 +36,7 @@ class UdpHeader extends TransportHeaderBase
     unsigned short srcPort;
     unsigned short destPort;
     chunkLength = UDP_HEADER_LENGTH;
-    B totalLengthField = B(-1);   // UDP header + payload in bytes
+    B totalLengthField = B(-1);   // UDP header + payload in bytes, or Checksum Coverage in UDPLite (RFC 3828)
     uint16_t crc = 0;
     CrcMode crcMode = CRC_MODE_UNDEFINED;
 }

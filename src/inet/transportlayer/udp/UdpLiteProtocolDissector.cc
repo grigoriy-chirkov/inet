@@ -21,31 +21,24 @@
 #include "inet/common/packet/dissector/ProtocolDissectorRegistry.h"
 #include "inet/transportlayer/udp/Udp.h"
 #include "inet/transportlayer/udp/UdpHeader_m.h"
-#include "inet/transportlayer/udp/UdpProtocolDissector.h"
+#include "inet/transportlayer/udp/UdpLiteProtocolDissector.h"
 
 namespace inet {
 
-Register_Protocol_Dissector(&Protocol::udp, UdpProtocolDissector);
+Register_Protocol_Dissector(&Protocol::udpLite, UdpLiteProtocolDissector);
 
-void UdpProtocolDissector::dissect(Packet *packet, const Protocol *protocol, ICallback& callback) const
+void UdpLiteProtocolDissector::dissect(Packet *packet, const Protocol *protocol, ICallback& callback) const
 {
-    auto originalTrailerPopOffset = packet->getBackOffset();
-    auto udpHeaderOffset = packet->getFrontOffset();
     auto header = packet->popAtFront<UdpHeader>();
-    callback.startProtocolDataUnit(&Protocol::udp);
-    bool isCorrectPacket = Udp::isCorrectPacket(packet, header, false);
+    callback.startProtocolDataUnit(&Protocol::udpLite);
+    bool isCorrectPacket = Udp::isCorrectPacket(packet, header, true);
     if (!isCorrectPacket)
         callback.markIncorrect();
-    callback.visitChunk(header, &Protocol::udp);
-    auto udpPayloadEndOffset = udpHeaderOffset + header->getTotalLengthField();
-    packet->setBackOffset(udpPayloadEndOffset);
+    callback.visitChunk(header, &Protocol::udpLite);
     auto dataProtocol = ProtocolGroup::udpprotocol.findProtocol(header->getDestPort());
     if (dataProtocol == nullptr)
         dataProtocol = ProtocolGroup::udpprotocol.findProtocol(header->getSrcPort());
     callback.dissectPacket(packet, dataProtocol);
-    ASSERT(packet->getDataLength() == B(0));
-    packet->setFrontOffset(udpPayloadEndOffset);
-    packet->setBackOffset(originalTrailerPopOffset);
     if (packet->getDataLength() > B(0))
         callback.dissectPacket(packet, nullptr);        // padding
     callback.endProtocolDataUnit(&Protocol::udp);

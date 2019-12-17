@@ -53,7 +53,9 @@ class INET_API Udp : public TransportProtocolBase
 {
   public:
     class CrcInsertion : public NetfilterBase::HookBase {
-      public:
+        friend class Udp;
+      protected:
+        bool udpLiteMode = false;
         virtual Result datagramPreRoutingHook(Packet *packet) override { return ACCEPT; }
         virtual Result datagramForwardHook(Packet *packet) override { return ACCEPT; }
         virtual Result datagramPostRoutingHook(Packet *packet) override;
@@ -98,6 +100,8 @@ class INET_API Udp : public TransportProtocolBase
         int ttl = -1;
         short dscp = -1;
         short tos = -1;
+        B udpliteSendCsCov = B(0);
+        B udpliteRecvCsCov = B(0);
         MulticastMembershipTable multicastMembershipTable;
 
         MulticastMembershipTable::iterator findFirstMulticastMembership(const L3Address& multicastAddress);
@@ -115,6 +119,7 @@ class INET_API Udp : public TransportProtocolBase
   protected:
     CrcMode crcMode = CRC_MODE_UNDEFINED;
     CrcInsertion crcInsertion;
+    bool udpLiteMode = false;
 
     // sockets
     SocketsByIdMap socketsByIdMap;
@@ -199,15 +204,15 @@ class INET_API Udp : public TransportProtocolBase
 
   public:
     // crc
-    static void insertCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<UdpHeader>& udpHeader, Packet *udpPayload);
-    static bool verifyCrc(const Protocol *networkProtocol, const Ptr<const UdpHeader>& udpHeader, Packet *packet);
-    static uint16_t computeCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<const UdpHeader>& udpHeader, const Ptr<const Chunk>& udpData);
+    static void insertCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<UdpHeader>& udpHeader, Packet *udpPayload, bool udpLiteMode);
+    static bool verifyCrc(const Protocol *networkProtocol, const Ptr<const UdpHeader>& udpHeader, Packet *packet, bool udpLiteMode);
+    static uint16_t computeCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<const UdpHeader>& udpHeader, const Ptr<const Chunk>& udpData, bool udpLiteMode);
 
   public:
     Udp();
     virtual ~Udp();
 
-    static bool isCorrectPacket(Packet *packet, const Ptr<const UdpHeader>& udpHeader);
+    static bool isCorrectPacket(Packet *packet, const Ptr<const UdpHeader>& udpHeader, bool udpLiteMode);
 
   protected:
     virtual void initialize(int stage) override;

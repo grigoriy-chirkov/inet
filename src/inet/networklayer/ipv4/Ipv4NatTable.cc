@@ -121,7 +121,7 @@ INetfilter::IHook::Result Ipv4NatTable::processPacket(Packet *packet, INetfilter
                 ipv4Header->setSrcAddress(natEntry.getSrcAddress());
             auto transportProtocol = ipv4Header->getProtocol();
 #ifdef WITH_UDP
-            if (transportProtocol == &Protocol::udp) {
+            if (transportProtocol == &Protocol::udp || transportProtocol == &Protocol::udpLite) {
                 auto& udpHeader = removeTransportProtocolHeader<UdpHeader>(packet);
                 // TODO: if (!Udp::verifyCrc(Protocol::ipv4, udpHeader, packet))
                 auto udpData = packet->peekData();
@@ -129,8 +129,8 @@ INetfilter::IHook::Result Ipv4NatTable::processPacket(Packet *packet, INetfilter
                     udpHeader->setDestPort(natEntry.getDestPort());
                 if (natEntry.getSrcPort() != -1)
                     udpHeader->setSrcPort(natEntry.getSrcPort());
-                Udp::insertCrc(&Protocol::ipv4, ipv4Header->getSrcAddress(), ipv4Header->getDestAddress(), udpHeader, packet);
-                insertTransportProtocolHeader(packet, Protocol::udp, udpHeader);
+                Udp::insertCrc(&Protocol::ipv4, ipv4Header->getSrcAddress(), ipv4Header->getDestAddress(), udpHeader, packet, transportProtocol == &Protocol::udpLite);
+                insertTransportProtocolHeader(packet, *transportProtocol, udpHeader);
             }
             else
 #endif
