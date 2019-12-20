@@ -319,7 +319,7 @@ void UdpSocket::sendToUDP(cMessage *msg)
     EV_TRACE << endl;
 
     auto& tags = getTags(msg);
-    tags.addTagIfAbsent<DispatchProtocolReq>()->setProtocol(&Protocol::udp);
+    tags.addTagIfAbsent<DispatchProtocolReq>()->setProtocol(&getProtocol());
     tags.addTagIfAbsent<SocketReq>()->setSocketId(socketId);
     check_and_cast<cSimpleModule *>(gateToUdp->getOwnerModule())->send(msg, gateToUdp);
 }
@@ -389,6 +389,23 @@ bool UdpSocket::belongsToSocket(cMessage *msg) const
     return socketInd != nullptr && socketInd->getSocketId() == socketId;
 }
 
+void UdpLiteSocket::setSendCsCov(int cov)
+{
+    auto request = new Request("setSendCsCov", UDP_C_SETOPTION);
+    auto *ctrl = new UdpLiteSetSendCsCovCommand();
+    ctrl->setSendCsCov(cov);
+    request->setControlInfo(ctrl);
+    sendToUDP(request);
+}
+
+void UdpLiteSocket::setRecvCsCov(int cov)
+{
+    auto request = new Request("setSendCsCov", UDP_C_SETOPTION);
+    auto *ctrl = new UdpLiteSetRecvCsCovCommand();
+    ctrl->setRecvCsCov(cov);
+    request->setControlInfo(ctrl);
+    sendToUDP(request);
+}
 
 } // namespace inet
 

@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "inet/common/INETDefs.h"
+#include "inet/common/Protocol.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/socket/ISocket.h"
@@ -108,8 +109,9 @@ class INET_API UdpSocket : public ISocket
     /**
      * Destructor
      */
-    ~UdpSocket() {}
+    virtual ~UdpSocket() {}
 
+    virtual const Protocol& getProtocol() const  { return Protocol::udp; }
     void *getUserData() const { return userData; }
     void setUserData(void *userData) { this->userData = userData; }
     State getState() const { return sockState; }
@@ -117,7 +119,7 @@ class INET_API UdpSocket : public ISocket
     /**
      * Returns the internal socket Id.
      */
-    int getSocketId() const override { return socketId; }
+    virtual int getSocketId() const override { return socketId; }
 
     /** @name Opening and closing connections, sending data */
     //@{
@@ -309,6 +311,39 @@ class INET_API UdpSocket : public ISocket
      */
     static std::string getReceivedPacketInfo(Packet *pk);
     //@}
+};
+
+class INET_API UdpLiteSocket : public UdpSocket
+{
+  public:
+    virtual const Protocol& getProtocol() const  { return Protocol::udpLite; }
+
+    /**
+     * Sets the sender checksum coverage and takes an int
+     * as argument, with a checksum coverage value in the range
+     * 0..2^16-1.
+     *
+     * A value of 0 means that the entire datagram is always covered.
+     * Values from 1-7 are illegal (RFC 3828, 3.1)
+     */
+    void setSendCsCov(int cov);
+
+    /**
+     * Sets the receiver-side minimum checksum coverage and takes an int
+     * as argument, with a checksum coverage value in the range
+     * 0..2^16-1.
+     *
+     * This is the receiver-side analogue and uses the same argument
+     * format and value range as setSendCsCov().  This option is
+     * not required to enable traffic with partial checksum coverage.
+     * Its function is that of a traffic filter: when enabled, it
+     * instructs the Udp to drop all packets which have a coverage
+     * less than the specified coverage value.
+     *
+     * When the value of setRecvCsCov() exceeds the actual packet
+     * coverage, incoming packets are silently dropped.
+     */
+    void setRecvCsCov(int cov);
 };
 
 } // namespace inet
