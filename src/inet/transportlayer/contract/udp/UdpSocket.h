@@ -95,6 +95,7 @@ class INET_API UdpSocket : public ISocket
     void *userData = nullptr;
     cGate *gateToUdp = nullptr;
     State sockState = CLOSED;
+    const Protocol *protocol = nullptr;
 
   protected:
     void sendToUDP(cMessage *msg);
@@ -111,7 +112,8 @@ class INET_API UdpSocket : public ISocket
      */
     virtual ~UdpSocket() {}
 
-    virtual const Protocol& getProtocol() const  { return Protocol::udp; }
+    virtual const Protocol& getProtocol() const  { ASSERT(protocol); return *protocol; }
+    virtual void setProtocol(const Protocol& protocolPar)  { protocol = &protocolPar; }
     void *getUserData() const { return userData; }
     void setUserData(void *userData) { this->userData = userData; }
     State getState() const { return sockState; }
@@ -311,12 +313,6 @@ class INET_API UdpSocket : public ISocket
      */
     static std::string getReceivedPacketInfo(Packet *pk);
     //@}
-};
-
-class INET_API UdpLiteSocket : public UdpSocket
-{
-  public:
-    virtual const Protocol& getProtocol() const  { return Protocol::udpLite; }
 
     /**
      * Sets the sender checksum coverage and takes an int

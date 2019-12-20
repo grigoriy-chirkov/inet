@@ -389,8 +389,10 @@ bool UdpSocket::belongsToSocket(cMessage *msg) const
     return socketInd != nullptr && socketInd->getSocketId() == socketId;
 }
 
-void UdpLiteSocket::setSendCsCov(int cov)
+void UdpSocket::setSendCsCov(int cov)
 {
+    if (!protocol || *protocol != Protocol::udpLite)
+        throw cRuntimeError("invalid protocol for setSendCsCov: %s", protocol ? protocol->getName() : "<nullptr>");
     auto request = new Request("setSendCsCov", UDP_C_SETOPTION);
     auto *ctrl = new UdpLiteSetSendCsCovCommand();
     ctrl->setSendCsCov(cov);
@@ -398,8 +400,10 @@ void UdpLiteSocket::setSendCsCov(int cov)
     sendToUDP(request);
 }
 
-void UdpLiteSocket::setRecvCsCov(int cov)
+void UdpSocket::setRecvCsCov(int cov)
 {
+    if (!protocol || *protocol != Protocol::udpLite)
+        throw cRuntimeError("invalid protocol for setSendCsCov: %s", protocol ? protocol->getName() : "<nullptr>");
     auto request = new Request("setSendCsCov", UDP_C_SETOPTION);
     auto *ctrl = new UdpLiteSetRecvCsCovCommand();
     ctrl->setRecvCsCov(cov);
